@@ -60,6 +60,11 @@ export default {
       handleTitleByStep();
     };
 
+    const handleBackStep = () => {
+      step.value = step.value - 1;
+      handleTitleByStep();
+    };
+
     const handleInitialStep = () => {
       step.value = 1;
       handleTitleByStep();
@@ -96,6 +101,7 @@ export default {
       form,
       step,
       title,
+      handleBackStep,
       handleNextStep,
       handleInitialStep,
       isButtonDisabled,
@@ -177,7 +183,7 @@ export default {
       <div class="actions">
         <button
           class="button outline w-100"
-          @click="handleInitialStep"
+          @click="handleBackStep"
           v-if="step != 1"
         >
           Voltar
