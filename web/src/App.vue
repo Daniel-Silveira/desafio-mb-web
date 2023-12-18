@@ -3,42 +3,70 @@ import "@/assets/style/global.scss";
 import Input from "@/components/Input.vue";
 import { reactive, ref } from "vue";
 
+const API_URL = "http://localhost:3000/registration";
+const TOTAL_STEPS = 4;
+
+const StepTitles = [
+  "Seja bem-vindo(a)",
+  "Pessoa Física",
+  "Senha de acesso",
+  "Revise suas informações",
+];
+
+const initialForm = {
+  email: "",
+  accountType: "",
+  name: "",
+  cpf: "",
+  birthDate: "",
+  phoneNumber: "",
+  password: "",
+  socialName: "",
+  cnpj: "",
+  initialDate: "",
+};
+
+const isValidEmail = (email) => {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
+};
+
+const isButtonDisabled = (step, form) => {
+  const validateByStep = {
+    1: form.accountType && isValidEmail(form.email),
+    2: form.name && form.cpf && form.birthDate && form.phoneNumber,
+    3: form.password,
+    4: true,
+  };
+
+  const validatePJ =
+    step === 2 &&
+    form.accountType === "PJ" &&
+    form.socialName &&
+    form.cnpj &&
+    form.initialDate &&
+    form.phoneNumber;
+
+  return !(validateByStep[step] || validatePJ);
+};
+
 export default {
   components: { Input },
   setup() {
     const step = ref(1);
-    const title = ref("Seja bem vindo(a)");
-    const initialForm = {
-      email: "",
-      accountType: "",
-      name: "",
-      cpf: "",
-      birthDate: "",
-      phoneNumber: "",
-      password: "",
-      socialName: "",
-      cnpj: "",
-      initialDate: "",
-    };
-    const form = reactive(initialForm);
+    const title = ref(StepTitles[0]);
+    const form = reactive({ ...initialForm });
 
     const handleTitleByStep = () => {
-      const listTitle = [
-        "Seja bem vindo(a)",
-        "Pessoa Física",
-        "Senha de acesso",
-        "Revise suas informações",
-      ];
-
       title.value =
         step.value === 2 && form.accountType === "PJ"
           ? "Pessoa Jurídica"
-          : listTitle[step.value - 1];
+          : StepTitles[step.value - 1];
     };
 
     const handleSignUp = async () => {
       try {
-        const { status } = await fetch("http://localhost:3000/registration", {
+        const { status } = await fetch(API_URL, {
           headers: {
             "Content-Type": "application/json",
           },
@@ -50,51 +78,25 @@ export default {
           handleInitialStep();
         }
       } catch (error) {
-        console.log("error", error);
+        console.error("Error:", error);
       }
     };
 
     const handleNextStep = () => {
-      if (step.value === 4) return handleSignUp();
-      step.value = step.value + 1;
+      if (step.value === TOTAL_STEPS) return handleSignUp();
+      step.value += 1;
       handleTitleByStep();
     };
 
     const handleBackStep = () => {
-      step.value = step.value - 1;
+      step.value -= 1;
       handleTitleByStep();
     };
 
     const handleInitialStep = () => {
       step.value = 1;
       handleTitleByStep();
-      Object.keys(initialForm).forEach((key) => {
-        form[key] = "";
-      });
-    };
-
-    const isValidEmail = (email) => {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      return emailRegex.test(email);
-    };
-
-    const isButtonDisabled = () => {
-      const validateByStep = {
-        1: form.accountType && isValidEmail(form.email),
-        2: form.name && form.cpf && form.birthDate && form.phoneNumber,
-        3: form.password,
-        4: true,
-      };
-
-      const validatePJ =
-        step.value === 2 &&
-        form.accountType === "PJ" &&
-        form.socialName &&
-        form.cnpj &&
-        form.initialDate &&
-        form.phoneNumber;
-
-      return !(validateByStep[step.value] || validatePJ);
+      Object.assign(form, initialForm);
     };
 
     return {
@@ -104,12 +106,11 @@ export default {
       handleBackStep,
       handleNextStep,
       handleInitialStep,
-      isButtonDisabled,
+      isButtonDisabled: () => isButtonDisabled(step.value, form),
     };
   },
 };
 </script>
-
 <template>
   <div class="container">
     <div class="card">
